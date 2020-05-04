@@ -17,6 +17,7 @@ func helperLoadFile(t *testing.T, name string) io.Reader {
 	return bytes
 }
 
+// Testdata created with the help of https://chocobo1.github.io/bencode_online/
 func Test_decodeTorrentFile(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -24,7 +25,8 @@ func Test_decodeTorrentFile(t *testing.T) {
 		wantResult TorrentFile
 		wantErr    bool
 	}{
-		{"Ubuntu", "ubuntu-20.04-desktop-amd64.iso.torrent",
+		{
+			"Ubuntu", "ubuntu-20.04-desktop-amd64.iso.torrent",
 			TorrentFile{
 				Announce: "https://torrent.ubuntu.com/announce",
 				Info: TorrentFileInfo{
@@ -33,7 +35,20 @@ func Test_decodeTorrentFile(t *testing.T) {
 					PieceLength: 1048576,
 				},
 			},
-			false},
+			false,
+		},
+		{
+			"Arch", "archlinux-2020.05.01-x86_64.iso.torrent",
+			TorrentFile{
+				Announce: "http://tracker.archlinux.org:6969/announce",
+				Info: TorrentFileInfo{
+					Name:        "archlinux-2020.05.01-x86_64.iso",
+					Length:      683671552,
+					PieceLength: 524288,
+				},
+			},
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -44,7 +59,6 @@ func Test_decodeTorrentFile(t *testing.T) {
 				t.Errorf("decodeTorrentFile() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			t.Logf("%+v", gotResult)
 			if !reflect.DeepEqual(gotResult, tt.wantResult) {
 				t.Errorf("decodeTorrentFile() = %v, want %v", gotResult, tt.wantResult)
 			}
