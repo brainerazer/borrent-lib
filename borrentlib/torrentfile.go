@@ -10,24 +10,18 @@ import (
 
 // TorrentFile - Torrent file parent structure
 type TorrentFile struct {
-	Announce string
-	Info     TorrentFileInfo
-	InfoHash [20]byte
+	Announce string          `bencode:"announce"`
+	Info     TorrentFileInfo `bencode:"info"`
+	InfoHash [20]byte        // Calculated, not read
 }
 
-// TorrentFileInfo - Member of info map in the torrent file
+// TorrentFileInfo - Member of info map in the torrent file.
+// Only for single-file torrents right now
 type TorrentFileInfo struct {
 	Name         string `bencode:"name"`
 	PieceLength  uint64 `bencode:"piece length"`
 	PiecesHashes string `bencode:"pieces"`
 	Length       uint64 `bencode:"length"`
-	// Files        []TorrentFileInfoFile
-}
-
-// TorrentFileInfoFile - Member of the files list in torrent file info map
-type TorrentFileInfoFile struct {
-	length uint64
-	path   []string
 }
 
 // DecodeTorrentFile - decode .torrent file into go structs

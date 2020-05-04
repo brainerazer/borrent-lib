@@ -28,4 +28,5 @@ func main() {
 
 	fmt.Println(peerID)
 	fmt.Println(responce)
+	// fmt.Println(tf.Info.PiecesHashes)
 }

@@ -9,15 +9,17 @@ import (
 	"github.com/jackpal/bencode-go"
 )
 
+// TrackerResponce ...
 type TrackerResponce struct {
 	FailureReason string        `bencode:"failure reason"`
 	Interval      int           `bencode:"interval"`
 	Peers         []PeerInfoExt `bencode:"peers"`
 }
 
+// PeerInfoExt ...
 type PeerInfoExt struct {
 	PeerID string `bencode:"peer id"`
-	Ip     string `bencode:"ip"`
+	IP     string `bencode:"ip"`
 	Port   int    `bencode:"port"`
 }
 

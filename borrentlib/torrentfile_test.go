@@ -4,8 +4,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func helperLoadFile(t *testing.T, name string) io.Reader {
@@ -34,6 +35,8 @@ func Test_DecodeTorrentFile(t *testing.T) {
 					Length:      2715254784,
 					PieceLength: 1048576,
 				},
+				InfoHash: [20]byte{0x9f, 0xc2, 0x0b, 0x9e, 0x98, 0xea, 0x98, 0xb4, 0xa3, 0x5e, 0x62, 0x23, 0x04, 0x1a, 0x5e, 0xf9,
+					0x4e, 0xa2, 0x78, 0x09},
 			},
 			false,
 		},
@@ -46,6 +49,8 @@ func Test_DecodeTorrentFile(t *testing.T) {
 					Length:      683671552,
 					PieceLength: 524288,
 				},
+				InfoHash: [20]byte{0xf9, 0x5c, 0x37, 0x1d, 0x56, 0x09, 0xd1, 0x5f, 0x66, 0x15, 0x13, 0x9b, 0xe8, 0x4e, 0xdb, 0xb5,
+					0xb9, 0x4a, 0x79, 0xbc},
 			},
 			false,
 		},
@@ -59,8 +64,16 @@ func Test_DecodeTorrentFile(t *testing.T) {
 				t.Errorf("DecodeTorrentFile() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotResult, tt.wantResult) {
-				t.Errorf("DecodeTorrentFile() = %v, want %v", gotResult, tt.wantResult)
+
+			// Ignore PiecesHashes key for now - it's very big
+			opt := cmp.FilterPath(
+				func(p cmp.Path) bool {
+					return p.String() == "Info.PiecesHashes"
+				},
+				cmp.Ignore(),
+			)
+			if diff := cmp.Diff(tt.wantResult, gotResult, opt); diff != "" {
+				t.Errorf("DecodeTorrentFile()  mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
