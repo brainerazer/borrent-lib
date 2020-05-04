@@ -1,10 +1,11 @@
 package main
 
 import (
-	"os"
-	"math/rand"
 	"fmt"
+	"math/rand"
+	"os"
 	"time"
+
 	"github.com/brainerazer/borrent-lib/borrentlib"
 )
 

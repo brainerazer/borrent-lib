@@ -3,7 +3,6 @@ package borrentlib
 import (
 	"bytes"
 	"crypto/sha1"
-	"fmt"
 	"io"
 
 	"github.com/jackpal/bencode-go"
@@ -36,7 +35,6 @@ func DecodeTorrentFile(r io.Reader) (result TorrentFile, err error) {
 	err = bencode.Unmarshal(r, &result)
 	var b bytes.Buffer
 	bencode.Marshal(&b, result.Info)
-	fmt.Println(b)
 	result.InfoHash = sha1.Sum(b.Bytes())
 	return result, err
 }

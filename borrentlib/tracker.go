@@ -1,7 +1,6 @@
 package borrentlib
 
 import (
-	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -57,8 +56,6 @@ func buildAnnounceURL(torr TorrentFile, peerID string) (announceURL string, err 
 	params.Add("downloaded", "0")
 	params.Add("left", strconv.FormatUint(torr.Info.Length, 10))
 	base.RawQuery = params.Encode()
-
-	fmt.Println(string(torr.InfoHash[:]))
 
 	return base.String(), nil
 }
