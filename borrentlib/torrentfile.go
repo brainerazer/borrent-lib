@@ -27,8 +27,11 @@ type TorrentFileInfo struct {
 // DecodeTorrentFile - decode .torrent file into go structs
 func DecodeTorrentFile(r io.Reader) (result TorrentFile, err error) {
 	err = bencode.Unmarshal(r, &result)
+	if err != nil {
+		return
+	}
 	var b bytes.Buffer
 	bencode.Marshal(&b, result.Info)
 	result.InfoHash = sha1.Sum(b.Bytes())
-	return result, err
+	return
 }
