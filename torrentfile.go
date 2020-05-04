@@ -27,7 +27,7 @@ type TorrentFileInfoFile struct {
 	path   []string
 }
 
-func decodeTorrentFile(r io.Reader) (result TorrentFile, err error) {
+func DecodeTorrentFile(r io.Reader) (result TorrentFile, err error) {
 	err = bencode.Unmarshal(r, &result)
 	return result, err
 }

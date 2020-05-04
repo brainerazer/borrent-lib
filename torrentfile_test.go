@@ -18,7 +18,7 @@ func helperLoadFile(t *testing.T, name string) io.Reader {
 }
 
 // Testdata created with the help of https://chocobo1.github.io/bencode_online/
-func Test_decodeTorrentFile(t *testing.T) {
+func Test_DecodeTorrentFile(t *testing.T) {
 	tests := []struct {
 		name       string
 		filename   string
@@ -54,13 +54,13 @@ func Test_decodeTorrentFile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			torrentFile := helperLoadFile(t, tt.filename)
 
-			gotResult, err := decodeTorrentFile(torrentFile)
+			gotResult, err := DecodeTorrentFile(torrentFile)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("decodeTorrentFile() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("DecodeTorrentFile() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotResult, tt.wantResult) {
-				t.Errorf("decodeTorrentFile() = %v, want %v", gotResult, tt.wantResult)
+				t.Errorf("DecodeTorrentFile() = %v, want %v", gotResult, tt.wantResult)
 			}
 		})
 	}
