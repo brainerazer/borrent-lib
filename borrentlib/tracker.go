@@ -1,34 +1,46 @@
 package borrentlib
 
 import (
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
+
+	"github.com/jackpal/bencode-go"
 )
+
+type TrackerResponce struct {
+	FailureReason string        `bencode:"failure reason"`
+	Interval      int           `bencode:"interval"`
+	Peers         []PeerInfoExt `bencode:"peers"`
+}
+
+type PeerInfoExt struct {
+	PeerID string `bencode:"peer id"`
+	Ip     string `bencode:"ip"`
+	Port   int    `bencode:"port"`
+}
 
 // AnnounceMyself - generate a random peerId & perform an announce get request to the tracker.
 // Returns generated peerId
-func AnnounceMyself(torrentFile TorrentFile) (peerID string, responce string, err error) {
+func AnnounceMyself(torrentFile TorrentFile) (peerID string, responce TrackerResponce, err error) {
 	peerID = generatePeerID()
 	announceURL, err := buildAnnounceURL(torrentFile, peerID)
 	if err != nil {
-		return "", "", err
+		return
 	}
 
 	resp, err := http.Get(announceURL)
 	if err != nil {
-		return "", "", err
+		return
 	}
 
-	responceB, err := ioutil.ReadAll(resp.Body)
+	err = bencode.Unmarshal(resp.Body, &responce)
 	if err != nil {
-		return "", "", err
+		return
 	}
 	resp.Body.Close()
 
-	responce = string(responceB)
 	return
 }
 
@@ -53,6 +65,7 @@ func buildAnnounceURL(torr TorrentFile, peerID string) (announceURL string, err 
 	params.Add("peer_id", peerID)
 	params.Add("port", "6881")
 	params.Add("uploaded", "0")
+	// params.Add("compact", "1")
 	params.Add("downloaded", "0")
 	params.Add("left", strconv.FormatUint(torr.Info.Length, 10))
 	base.RawQuery = params.Encode()
