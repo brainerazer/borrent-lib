@@ -30,8 +30,13 @@ func DecodeTorrentFile(r io.Reader) (result TorrentFile, err error) {
 	if err != nil {
 		return
 	}
+
 	var b bytes.Buffer
-	bencode.Marshal(&b, result.Info)
+	err = bencode.Marshal(&b, result.Info)
+	if err != nil {
+		return
+	}
+
 	result.InfoHash = sha1.Sum(b.Bytes())
 	return
 }
