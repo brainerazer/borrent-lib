@@ -63,7 +63,7 @@ func generatePeerID() string {
 }
 
 func buildAnnounceURL(torr TorrentFile, peerID string) (announceURL string, err error) {
-	base, err := url.Parse(torr.Announce)
+	base, err := url.Parse(torr.AnnounceURL)
 	if err != nil {
 		return "", err
 	}
@@ -75,7 +75,7 @@ func buildAnnounceURL(torr TorrentFile, peerID string) (announceURL string, err 
 	params.Add("uploaded", "0")
 	// params.Add("compact", "1")
 	params.Add("downloaded", "0")
-	params.Add("left", strconv.FormatUint(torr.Info.Length, 10))
+	params.Add("left", strconv.FormatUint(torr.FileInfo.Length, 10))
 	base.RawQuery = params.Encode()
 
 	return base.String(), nil

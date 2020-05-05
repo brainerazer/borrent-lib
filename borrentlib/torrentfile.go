@@ -8,16 +8,30 @@ import (
 	"github.com/jackpal/bencode-go"
 )
 
-// TorrentFile - Torrent file parent structure
+// TorrentFile is a torrent file descriptor struct
 type TorrentFile struct {
-	Announce string          `bencode:"announce"`
-	Info     TorrentFileInfo `bencode:"info"`
-	InfoHash [20]byte        // Calculated, not read
+	AnnounceURL string
+	InfoHash    [20]byte     // InfoHash is a unique torrent ID, 20 bytes of SHA-1 hash
+	FileInfo    DataFileInfo // Only single-file torrents are suppoted right now
 }
 
-// TorrentFileInfo - Member of info map in the torrent file.
-// Only for single-file torrents right now
-type TorrentFileInfo struct {
+// DataFileInfo is an information about a particular data file in a torrent
+type DataFileInfo struct {
+	Name         string
+	Length       uint64
+	PieceLength  uint64
+	PiecesHashes [][20]byte // contains hashes of each piece in bytes array
+}
+
+// FileInfo - Member of info map in the torrent file.
+
+// Auxiliary structs for bencode unmarshalling
+type torrentFile struct {
+	Announce string          `bencode:"announce"`
+	Info     torrentFileInfo `bencode:"info"`
+}
+
+type torrentFileInfo struct {
 	Name         string `bencode:"name"`
 	PieceLength  uint64 `bencode:"piece length"`
 	PiecesHashes string `bencode:"pieces"`
@@ -26,17 +40,37 @@ type TorrentFileInfo struct {
 
 // DecodeTorrentFile - decode .torrent file into go structs
 func DecodeTorrentFile(r io.Reader) (result TorrentFile, err error) {
-	err = bencode.Unmarshal(r, &result)
+	// Parse torrrent file
+	tFile := torrentFile{}
+	err = bencode.Unmarshal(r, &tFile)
 	if err != nil {
 		return
 	}
 
+	// Calculate infohash - a hash of bencoded part of an `info` field
 	var b bytes.Buffer
-	err = bencode.Marshal(&b, result.Info)
+	err = bencode.Marshal(&b, tFile.Info)
 	if err != nil {
 		return
 	}
+	infoHash := sha1.Sum(b.Bytes())
 
-	result.InfoHash = sha1.Sum(b.Bytes())
-	return
+	// Splitting piecesHashes string into hashes for each piece.
+	// SHA-1 hash size is 20 bytes
+	chunkNum := len(tFile.Info.PiecesHashes) / 20
+	chunks := make([][20]byte, chunkNum)
+	for i := 0; i < chunkNum; i++ {
+		copy(chunks[i][:], []byte(tFile.Info.PiecesHashes[i*20:i*20+20]))
+	}
+
+	return TorrentFile{
+		AnnounceURL: tFile.Announce,
+		InfoHash:    infoHash,
+		FileInfo: DataFileInfo{
+			Name:         tFile.Info.Name,
+			Length:       tFile.Info.Length,
+			PieceLength:  tFile.Info.PieceLength,
+			PiecesHashes: chunks,
+		},
+	}, nil
 }

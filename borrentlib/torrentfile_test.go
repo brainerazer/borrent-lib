@@ -29,8 +29,8 @@ func Test_DecodeTorrentFile(t *testing.T) {
 		{
 			"Ubuntu", "ubuntu-20.04-desktop-amd64.iso.torrent",
 			TorrentFile{
-				Announce: "https://torrent.ubuntu.com/announce",
-				Info: TorrentFileInfo{
+				AnnounceURL: "https://torrent.ubuntu.com/announce",
+				FileInfo: DataFileInfo{
 					Name:        "ubuntu-20.04-desktop-amd64.iso",
 					Length:      2715254784,
 					PieceLength: 1048576,
@@ -43,8 +43,8 @@ func Test_DecodeTorrentFile(t *testing.T) {
 		{
 			"Arch", "archlinux-2020.05.01-x86_64.iso.torrent",
 			TorrentFile{
-				Announce: "http://tracker.archlinux.org:6969/announce",
-				Info: TorrentFileInfo{
+				AnnounceURL: "http://tracker.archlinux.org:6969/announce",
+				FileInfo: DataFileInfo{
 					Name:        "archlinux-2020.05.01-x86_64.iso",
 					Length:      683671552,
 					PieceLength: 524288,
@@ -68,7 +68,7 @@ func Test_DecodeTorrentFile(t *testing.T) {
 			// Ignore PiecesHashes key for now - it's very big
 			opt := cmp.FilterPath(
 				func(p cmp.Path) bool {
-					return p.String() == "Info.PiecesHashes"
+					return p.String() == "FileInfo.PiecesHashes"
 				},
 				cmp.Ignore(),
 			)
