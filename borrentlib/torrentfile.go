@@ -11,7 +11,7 @@ import (
 // TorrentFile is a torrent file descriptor struct
 type TorrentFile struct {
 	AnnounceURL string
-	InfoHash    [20]byte     // InfoHash is a unique torrent ID, 20 bytes of SHA-1 hash
+	InfoHash    []byte       // InfoHash is a unique torrent ID, 20 bytes of SHA-1 hash
 	FileInfo    DataFileInfo // Only single-file torrents are suppoted right now
 }
 
@@ -20,7 +20,7 @@ type DataFileInfo struct {
 	Name         string
 	Length       uint64
 	PieceLength  uint64
-	PiecesHashes [][20]byte // contains hashes of each piece in bytes array
+	PiecesHashes [][]byte // contains hashes of each piece in bytes array
 }
 
 // FileInfo - Member of info map in the torrent file.
@@ -58,14 +58,14 @@ func DecodeTorrentFile(r io.Reader) (result TorrentFile, err error) {
 	// Splitting piecesHashes string into hashes for each piece.
 	// SHA-1 hash size is 20 bytes
 	chunkNum := len(tFile.Info.PiecesHashes) / 20
-	chunks := make([][20]byte, chunkNum)
+	chunks := make([][]byte, chunkNum)
 	for i := 0; i < chunkNum; i++ {
-		copy(chunks[i][:], []byte(tFile.Info.PiecesHashes[i*20:i*20+20]))
+		chunks[i] = []byte(tFile.Info.PiecesHashes[i*20 : i*20+20])
 	}
 
 	return TorrentFile{
 		AnnounceURL: tFile.Announce,
-		InfoHash:    infoHash,
+		InfoHash:    infoHash[:],
 		FileInfo: DataFileInfo{
 			Name:         tFile.Info.Name,
 			Length:       tFile.Info.Length,
