@@ -1,6 +1,7 @@
 package borrentlib
 
 import (
+	"errors"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -36,12 +37,15 @@ func AnnounceMyself(torrentFile TorrentFile) (peerID string, responce TrackerRes
 	if err != nil {
 		return
 	}
+	defer resp.Body.Close()
 
 	err = bencode.Unmarshal(resp.Body, &responce)
 	if err != nil {
 		return
 	}
-	resp.Body.Close()
+	if responce.FailureReason != "" {
+		return peerID, responce, errors.New(responce.FailureReason)
+	}
 
 	return
 }
