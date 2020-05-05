@@ -15,7 +15,7 @@ type PeerConnectionInfo struct {
 	peerInterested int
 }
 
-type Handshake struct {
+type handshake struct {
 	StrLength uint8
 	Str       [19]byte
 	Reserved  [8]byte
@@ -44,13 +44,13 @@ func PeerHandshake(infoHash []byte, myPeerID string, peerInfo PeerInfoExt) error
 	}
 	defer conn.Close()
 
-	_, err = conn.Write(message)
+	err = binary.Write(conn, binary.LittleEndian, &message)
 	if err != nil {
 		return err
 	}
 
 	// reply := make([]byte, 68)
-	reply := Handshake{}
+	reply := handshake{}
 
 	err = binary.Read(conn, binary.LittleEndian, &reply)
 	if err != nil {
@@ -64,12 +64,21 @@ func PeerHandshake(infoHash []byte, myPeerID string, peerInfo PeerInfoExt) error
 	return nil
 }
 
-func createHandshakeMessage(infoHash []byte, peerID string) []byte {
-	// BitTorent protocol v1.0
-	message := append([]byte{19}, "BitTorrent protocol"...)
-	message = append(message, make([]byte, 8)...) // 8 zeroes
-	message = append(message, infoHash...)
-	message = append(message, peerID...)
+func createHandshakeMessage(infoHash []byte, peerID string) handshake {
+	// Thanks for rejecting https://github.com/golang/go/issues/36890 !
+	var strArr [19]byte
+	copy(strArr[:], "BitTorrent protocol")
+	var ihArr [20]byte
+	copy(ihArr[:], infoHash)
+	var peerIDArr [20]byte
+	copy(peerIDArr[:], peerID)
 
-	return message
+	return handshake{
+		// BitTorent protocol v1.0
+		StrLength: 19,
+		Str:       strArr,
+		Reserved:  [8]byte{}, // 8 zeroes
+		InfoHash:  ihArr,
+		PeerID:    peerIDArr,
+	}
 }
