@@ -14,6 +14,8 @@ import (
 type TrackerResponce struct {
 	FailureReason string        `bencode:"failure reason"`
 	Interval      int           `bencode:"interval"`
+	Complete      int           `bencode:"complete"`
+	Incomplete    int           `bencode:"incomplete"`
 	Peers         []PeerInfoExt `bencode:"peers"`
 }
 
