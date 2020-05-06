@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 
 	"gopkg.in/restruct.v1"
@@ -49,15 +48,10 @@ func PeerHandshake(infoHash []byte, myPeerID string, peerInfo PeerInfoExt) error
 		return err
 	}
 
-	decoded := make([]byte, 68)
-
-	_, err = io.ReadFull(conn, decoded)
+	reply, err := readHandshake(conn)
 	if err != nil {
 		return err
 	}
-
-	var reply handshake
-	err = restruct.Unpack(decoded, binary.LittleEndian, &reply)
 
 	fmt.Printf("%+v\n", reply)
 	fmt.Printf("%s, %s, %v\n", reply.Str, reply.PeerID, reply.InfoHash)
