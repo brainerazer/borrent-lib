@@ -140,6 +140,38 @@ func Test_readMessage(t *testing.T) {
 			have{PieceIndex: 0x000000a0},
 			false,
 		},
+		{
+			"Wireshark sample no 2 - Interested",
+			args{
+				bytes.NewReader([]byte("\x00\x00\x00\x01\x02")),
+			},
+			interested{},
+			false,
+		},
+		{
+			"Wireshark sample no 2 - Unchoke",
+			args{
+				bytes.NewReader([]byte("\x00\x00\x00\x01\x01")),
+			},
+			unchoke{},
+			false,
+		},
+		{
+			"Wireshark sample no 2 - Request",
+			args{
+				bytes.NewReader([]byte("\x00\x00\x00\x0d\x06\x00\x00\x00\x48\x00\x00\x00\x00\x00\x00\x40\x00")),
+			},
+			request{Index: 0x00000048, Begin: 0x00000000, Length: 0x00004000},
+			false,
+		},
+		{
+			"Wireshark sample no 2 - Piece",
+			args{
+				bytes.NewReader([]byte("\x00\x00\x00\x01\x01")),
+			},
+			unchoke{},
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
