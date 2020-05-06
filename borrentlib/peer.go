@@ -4,7 +4,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"net"
+
+	"gopkg.in/restruct.v1"
 )
 
 // PeerConnectionInfo ...
@@ -13,14 +16,6 @@ type PeerConnectionInfo struct {
 	amInterested   int
 	peerChoking    int
 	peerInterested int
-}
-
-type handshake struct {
-	StrLength uint8
-	Str       [19]byte
-	Reserved  [8]byte
-	InfoHash  [20]byte
-	PeerID    [20]byte
 }
 
 // NewPeerConnectionInfo ...
@@ -44,20 +39,26 @@ func PeerHandshake(infoHash []byte, myPeerID string, peerInfo PeerInfoExt) error
 	}
 	defer conn.Close()
 
-	err = binary.Write(conn, binary.LittleEndian, &message)
+	encoded, err := restruct.Pack(binary.LittleEndian, &message)
 	if err != nil {
 		return err
 	}
 
-	// reply := make([]byte, 68)
-	reply := handshake{}
-
-	err = binary.Read(conn, binary.LittleEndian, &reply)
+	_, err = conn.Write(encoded)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(peerInfo)
+	decoded := make([]byte, 68)
+
+	_, err = io.ReadFull(conn, decoded)
+	if err != nil {
+		return err
+	}
+
+	var reply handshake
+	err = restruct.Unpack(decoded, binary.LittleEndian, &reply)
+
 	fmt.Printf("%+v\n", reply)
 	fmt.Printf("%s, %s, %v\n", reply.Str, reply.PeerID, reply.InfoHash)
 
@@ -65,20 +66,12 @@ func PeerHandshake(infoHash []byte, myPeerID string, peerInfo PeerInfoExt) error
 }
 
 func createHandshakeMessage(infoHash []byte, peerID string) handshake {
-	// Thanks for rejecting https://github.com/golang/go/issues/36890 !
-	var strArr [19]byte
-	copy(strArr[:], "BitTorrent protocol")
-	var ihArr [20]byte
-	copy(ihArr[:], infoHash)
-	var peerIDArr [20]byte
-	copy(peerIDArr[:], peerID)
-
 	return handshake{
 		// BitTorent protocol v1.0
 		StrLength: 19,
-		Str:       strArr,
-		Reserved:  [8]byte{}, // 8 zeroes
-		InfoHash:  ihArr,
-		PeerID:    peerIDArr,
+		Str:       []byte("BitTorrent protocol"),
+		Reserved:  make([]byte, 8), // 8 zeroes
+		InfoHash:  infoHash,
+		PeerID:    []byte(peerID),
 	}
 }
