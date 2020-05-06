@@ -29,9 +29,11 @@ func main() {
 	fmt.Println(peerID)
 	fmt.Println(responce)
 
-	err = borrentlib.PeerHandshake(tf.InfoHash[:], peerID, responce.Peers[0])
+	hs, err := borrentlib.PeerHandshake(tf.InfoHash[:], peerID, responce.Peers[0])
 	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("%+v\n", hs)
+	fmt.Printf("%s, %s, %v\n", hs.Str, hs.PeerID, hs.InfoHash)
 	// fmt.Println(tf.Info.PiecesHashes)
 }

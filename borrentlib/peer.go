@@ -2,7 +2,6 @@ package borrentlib
 
 import (
 	"errors"
-	"fmt"
 	"net"
 )
 
@@ -20,17 +19,17 @@ func NewPeerConnectionInfo() PeerConnectionInfo {
 }
 
 // PeerHandshake ...
-func PeerHandshake(infoHash []byte, myPeerID string, peerInfo PeerInfoExt) error {
+func PeerHandshake(infoHash []byte, myPeerID string, peerInfo PeerInfoExt) (handshake, error) {
 
 	clientIP := net.ParseIP(peerInfo.IP)
 	if clientIP == nil {
-		return errors.New("IP parsing error")
+		return handshake{}, errors.New("IP parsing error")
 	}
 
 	tcpAddr := net.TCPAddr{IP: clientIP, Port: peerInfo.Port}
 	conn, err := net.DialTCP("tcp", nil, &tcpAddr)
 	if err != nil {
-		return err
+		return handshake{}, err
 	}
 	defer conn.Close()
 
@@ -38,18 +37,15 @@ func PeerHandshake(infoHash []byte, myPeerID string, peerInfo PeerInfoExt) error
 
 	err = writeHandshake(conn, &message)
 	if err != nil {
-		return err
+		return handshake{}, err
 	}
 
 	reply, err := readHandshake(conn)
 	if err != nil {
-		return err
+		return handshake{}, err
 	}
 
-	fmt.Printf("%+v\n", reply)
-	fmt.Printf("%s, %s, %v\n", reply.Str, reply.PeerID, reply.InfoHash)
-
-	return nil
+	return reply, nil
 }
 
 func createHandshakeMessage(infoHash []byte, peerID string) handshake {
