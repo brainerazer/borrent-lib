@@ -20,6 +20,19 @@ func readHandshake(buf io.Reader) (hs handshake, err error) {
 	return hs, nil
 }
 
+func writeHandshake(buf io.Writer, hs *handshake) (err error) {
+	encoded, err := restruct.Pack(binary.LittleEndian, hs)
+	if err != nil {
+		return err
+	}
+
+	_, err = buf.Write(encoded)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // ReadMessage reads all other messages which are not handshake
 func readMessage(buf io.Reader) (message interface{}, err error) {
 	var msg messageBase

@@ -1,12 +1,9 @@
 package borrentlib
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"net"
-
-	"gopkg.in/restruct.v1"
 )
 
 // PeerConnectionInfo ...
@@ -24,7 +21,6 @@ func NewPeerConnectionInfo() PeerConnectionInfo {
 
 // PeerHandshake ...
 func PeerHandshake(infoHash []byte, myPeerID string, peerInfo PeerInfoExt) error {
-	message := createHandshakeMessage(infoHash, myPeerID)
 
 	clientIP := net.ParseIP(peerInfo.IP)
 	if clientIP == nil {
@@ -38,12 +34,9 @@ func PeerHandshake(infoHash []byte, myPeerID string, peerInfo PeerInfoExt) error
 	}
 	defer conn.Close()
 
-	encoded, err := restruct.Pack(binary.LittleEndian, &message)
-	if err != nil {
-		return err
-	}
+	message := createHandshakeMessage(infoHash, myPeerID)
 
-	_, err = conn.Write(encoded)
+	err = writeHandshake(conn, &message)
 	if err != nil {
 		return err
 	}
