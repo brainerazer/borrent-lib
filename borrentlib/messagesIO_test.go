@@ -123,13 +123,21 @@ func Test_readMessage(t *testing.T) {
 		wantErr     bool
 	}{
 		{
-			"Wireshark sample no 1 - bitfield",
+			"Wireshark sample no 1 - Bitfield",
 			args{
 				bytes.NewReader([]byte("\x00\x00\x00\x19\x05\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
 					"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xfe")),
 			},
 			bitfield{bitfield: []byte("\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
 				"\xff\xff\xff\xff\xff\xff\xff\xfe")},
+			false,
+		},
+		{
+			"Wireshark sample no 2 - Have",
+			args{
+				bytes.NewReader([]byte("\x00\x00\x00\x05\x04\x00\x00\x00\xa0")),
+			},
+			have{pieceIndex: 0x000000a0},
 			false,
 		},
 	}
