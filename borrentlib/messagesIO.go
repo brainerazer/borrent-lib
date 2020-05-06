@@ -75,16 +75,16 @@ func readMessage(buf io.Reader) (message interface{}, err error) {
 
 	// Now to variable-size
 	case bitfieldMT:
-		outMsg := bitfield{}
+		outMsg := Bitfield{}
 		toRead := msg.LengthPrefix - 1
-		outMsg.bitfield = make([]byte, toRead)
-		err = binary.Read(buf, binary.BigEndian, &outMsg.bitfield)
+		outMsg.Bitfield = make([]byte, toRead)
+		err = binary.Read(buf, binary.BigEndian, &outMsg.Bitfield)
 		return outMsg, err
 	case pieceMT:
 		outMsg := piece{}
 		toRead := msg.LengthPrefix - 9
-		outMsg.block = make([]byte, toRead)
-		err = binary.Read(buf, binary.BigEndian, &outMsg.block)
+		outMsg.Block = make([]byte, toRead)
+		err = binary.Read(buf, binary.BigEndian, &outMsg.Block)
 		return outMsg, err
 	}
 

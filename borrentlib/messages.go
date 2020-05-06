@@ -28,12 +28,11 @@ type messageBase struct {
 	MessageID    messageType
 }
 
+// No MessageID (LengthPrefix = 0)!
 type keepAlive struct {
-	messageBase // No MessageID though (LengthPrefix = 0)!
 }
 
 type choke struct {
-	messageBase
 }
 
 type unchoke struct {
@@ -46,31 +45,31 @@ type notInterested struct {
 }
 
 type have struct {
-	pieceIndex uint32
+	PieceIndex uint32
 }
 
-type bitfield struct {
-	bitfield []byte
+type Bitfield struct {
+	Bitfield []byte
 }
 
 type request struct {
-	index  uint32
-	begin  uint32
-	length uint32
+	Index  uint32
+	Begin  uint32
+	Length uint32
 }
 
 type piece struct {
-	index uint32
-	begin uint32
-	block []byte
+	Index uint32
+	Begin uint32
+	Block []byte
 }
 
 type cancel struct {
-	index  uint32
-	begin  uint32
-	length uint32
+	Index  uint32
+	Begin  uint32
+	Length uint32
 }
 
 type port struct {
-	listenPort uint16
+	ListenPort uint16
 }
