@@ -29,7 +29,13 @@ func main() {
 	fmt.Println(peerID)
 	fmt.Println(responce)
 
-	hs, err := borrentlib.PeerHandshake(tf.InfoHash[:], peerID, responce.Peers[0])
+	conn, err := borrentlib.DialPeerTCP(responce.Peers[0])
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+
+	hs, err := borrentlib.PeerHandshake(conn, tf.InfoHash[:], peerID)
 	if err != nil {
 		panic(err)
 	}

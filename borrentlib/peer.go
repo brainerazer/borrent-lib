@@ -18,24 +18,27 @@ func NewPeerConnectionInfo() PeerConnectionInfo {
 	return PeerConnectionInfo{1, 0, 1, 0}
 }
 
-// PeerHandshake ...
-func PeerHandshake(infoHash []byte, myPeerID string, peerInfo PeerInfoExt) (handshake, error) {
-
+// DialPeerTCP ...
+func DialPeerTCP(peerInfo PeerInfoExt) (net.Conn, error) {
 	clientIP := net.ParseIP(peerInfo.IP)
 	if clientIP == nil {
-		return handshake{}, errors.New("IP parsing error")
+		return nil, errors.New("IP parsing error")
 	}
 
 	tcpAddr := net.TCPAddr{IP: clientIP, Port: peerInfo.Port}
 	conn, err := net.DialTCP("tcp", nil, &tcpAddr)
 	if err != nil {
-		return handshake{}, err
+		return nil, err
 	}
-	defer conn.Close()
 
+	return conn, nil
+}
+
+// PeerHandshake ...
+func PeerHandshake(conn net.Conn, infoHash []byte, myPeerID string) (handshake, error) {
 	message := createHandshakeMessage(infoHash, myPeerID)
 
-	err = writeHandshake(conn, &message)
+	err := writeHandshake(conn, &message)
 	if err != nil {
 		return handshake{}, err
 	}
