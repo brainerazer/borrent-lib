@@ -235,7 +235,7 @@ func Test_readMessage_largepiece(t *testing.T) {
 				return
 			}
 			if diff := cmp.Diff(tt.wantMessage, gotMessage); diff != "" {
-				t.Errorf("DecodeTorrentFile()  mismatch (-want +got):\n%s", diff)
+				t.Errorf("readMessage()  mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
