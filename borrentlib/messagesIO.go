@@ -36,13 +36,18 @@ func writeHandshake(buf io.Writer, hs *handshake) (err error) {
 // ReadMessage reads all other messages which are not handshake
 func readMessage(buf io.Reader) (message interface{}, err error) {
 	var msg messageBase
-	err = binary.Read(buf, binary.BigEndian, &msg)
+	err = binary.Read(buf, binary.BigEndian, &msg.LengthPrefix)
 	if err != nil {
 		return
 	}
 
 	if msg.LengthPrefix == 0 { // keep-alive
 		return keepAlive{}, nil
+	}
+
+	err = binary.Read(buf, binary.BigEndian, &msg.MessageID)
+	if err != nil {
+		return
 	}
 
 	switch msg.MessageID {

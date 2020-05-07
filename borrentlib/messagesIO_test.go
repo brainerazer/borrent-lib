@@ -175,6 +175,22 @@ func Test_readMessage(t *testing.T) {
 			request{Index: 0x00000048, Begin: 0x00000000, Length: 0x00004000},
 			false,
 		},
+		{
+			"Wireshark own - choke",
+			args{
+				bytes.NewReader([]byte("\x00\x00\x00\x01\x00")),
+			},
+			choke{},
+			false,
+		},
+		{
+			"Wireshark NOT CAPTURE (couldn't find  one) - keepalive",
+			args{
+				bytes.NewReader([]byte("\x00\x00\x00\x00")),
+			},
+			keepAlive{},
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
