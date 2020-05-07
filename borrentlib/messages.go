@@ -58,7 +58,7 @@ type request struct {
 	Length uint32
 }
 
-type piece struct {
+type Piece struct {
 	Index uint32
 	Begin uint32
 	Block []byte

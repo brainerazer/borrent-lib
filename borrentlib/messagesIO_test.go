@@ -3,9 +3,20 @@ package borrentlib
 import (
 	"bytes"
 	"io"
+	"io/ioutil"
 	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
+
+func helperReadAll(t *testing.T, r io.Reader) []byte {
+	bytes, err := ioutil.ReadAll(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return bytes
+}
 
 func Test_readHandshake(t *testing.T) {
 	type args struct {
@@ -164,14 +175,6 @@ func Test_readMessage(t *testing.T) {
 			request{Index: 0x00000048, Begin: 0x00000000, Length: 0x00004000},
 			false,
 		},
-		{
-			"Wireshark sample no 2 - Piece",
-			args{
-				bytes.NewReader([]byte("\x00\x00\x00\x01\x01")),
-			},
-			unchoke{},
-			false,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -182,6 +185,41 @@ func Test_readMessage(t *testing.T) {
 			}
 			if !reflect.DeepEqual(gotMessage, tt.wantMessage) {
 				t.Errorf("readMessage() = %v, want %v", gotMessage, tt.wantMessage)
+			}
+		})
+	}
+}
+
+func Test_readMessage_largepiece(t *testing.T) {
+	type args struct {
+		filename string
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantMessage interface{}
+		wantErr     bool
+	}{
+		{
+			"Wireshark own - piece",
+			args{
+				"piece_message.bin",
+			},
+			Piece{Index: 0x00000ee2, Begin: 0x00018000,
+				Block: helperReadAll(t, helperLoadFile(t, "piece_data.bin"))},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			file := helperLoadFile(t, tt.args.filename)
+			gotMessage, err := readMessage(file)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("readMessage() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if diff := cmp.Diff(tt.wantMessage, gotMessage); diff != "" {
+				t.Errorf("DecodeTorrentFile()  mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

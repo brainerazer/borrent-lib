@@ -81,9 +81,17 @@ func readMessage(buf io.Reader) (message interface{}, err error) {
 		err = binary.Read(buf, binary.BigEndian, &outMsg.Bitfield)
 		return outMsg, err
 	case pieceMT:
-		outMsg := piece{}
+		outMsg := Piece{}
 		toRead := msg.LengthPrefix - 9
 		outMsg.Block = make([]byte, toRead)
+		err = binary.Read(buf, binary.BigEndian, &outMsg.Index)
+		if err != nil {
+			return nil, err
+		}
+		err = binary.Read(buf, binary.BigEndian, &outMsg.Begin)
+		if err != nil {
+			return nil, err
+		}
 		err = binary.Read(buf, binary.BigEndian, &outMsg.Block)
 		return outMsg, err
 	}
