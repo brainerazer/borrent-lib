@@ -239,3 +239,39 @@ func TestWriteMessage(t *testing.T) {
 		})
 	}
 }
+
+func Test_WriteMessage_largepiece(t *testing.T) {
+	type args struct {
+		message Piece
+	}
+	tests := []struct {
+		name         string
+		args         args
+		wantFilename string
+		wantErr      bool
+	}{
+		{
+			"Wireshark own - piece",
+			args{
+				Piece{Index: 0x00000ee2, Begin: 0x00018000,
+					Block: helperReadAll(t, helperLoadFile(t, "piece_data.bin"))},
+			},
+			"piece_message.bin",
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			file := helperReadAll(t, helperLoadFile(t, tt.wantFilename))
+			buf := &bytes.Buffer{}
+			err := WriteMessage(buf, tt.args.message)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("WriteMessage() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if diff := cmp.Diff(file, buf.Bytes()); diff != "" {
+				t.Errorf("WriteMessage()  mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}

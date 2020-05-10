@@ -1,5 +1,7 @@
 package borrentlib
 
+import "io"
+
 type handshake struct {
 	StrLength uint8 `struct:"uint8,sizeof=Str"`
 	Str       []byte
@@ -76,5 +78,5 @@ type port struct {
 
 // TorrentMessage ...
 type torrentMessage interface {
-	toBytes() ([]byte, error)
+	WriteTo(w io.Writer) error
 }

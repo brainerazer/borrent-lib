@@ -118,54 +118,96 @@ func readMessage(buf io.Reader) (message torrentMessage, err error) {
 
 // WriteMessage ...
 func WriteMessage(buf io.Writer, message torrentMessage) (err error) {
-	bytes, err := message.toBytes()
+	err = message.WriteTo(buf)
+	return err
+}
+
+func (msg keepAlive) WriteTo(w io.Writer) error {
+	_, err := w.Write([]byte("\x00\x00\x00\x00"))
+	return err
+}
+
+func (msg choke) WriteTo(w io.Writer) error {
+	err := binary.Write(w, binary.BigEndian, messageBase{1, chokeMT})
+	return err
+}
+
+func (msg unchoke) WriteTo(w io.Writer) error {
+	err := binary.Write(w, binary.BigEndian, messageBase{1, unchokeMT})
+	return err
+}
+
+func (msg interested) WriteTo(w io.Writer) error {
+	err := binary.Write(w, binary.BigEndian, messageBase{1, interestedMT})
+	return err
+}
+
+func (msg notInterested) WriteTo(w io.Writer) error {
+	err := binary.Write(w, binary.BigEndian, messageBase{1, notInterestedMT})
+	return err
+}
+
+func (msg have) WriteTo(w io.Writer) error {
+	err := binary.Write(w, binary.BigEndian, messageBase{5, haveMT})
 	if err != nil {
-		return
+		return err
 	}
-	_, err = buf.Write(bytes)
-	return
+	err = binary.Write(w, binary.BigEndian, msg)
+	return err
 }
 
-func (msg keepAlive) toBytes() ([]byte, error) {
-	return []byte("\x00\x00\x00\x00"), nil
+func (msg request) WriteTo(w io.Writer) error {
+	err := binary.Write(w, binary.BigEndian, messageBase{13, requestMT})
+	if err != nil {
+		return err
+	}
+	err = binary.Write(w, binary.BigEndian, msg)
+	return err
 }
 
-func (msg choke) toBytes() ([]byte, error) {
-	panic("Not implemented!")
+func (msg cancel) WriteTo(w io.Writer) error {
+	err := binary.Write(w, binary.BigEndian, messageBase{13, cancelMT})
+	if err != nil {
+		return err
+	}
+	err = binary.Write(w, binary.BigEndian, msg)
+	return err
 }
 
-func (msg unchoke) toBytes() ([]byte, error) {
-	panic("Not implemented!")
+func (msg port) WriteTo(w io.Writer) error {
+	err := binary.Write(w, binary.BigEndian, messageBase{3, portMT})
+	if err != nil {
+		return err
+	}
+	err = binary.Write(w, binary.BigEndian, msg)
+	return err
 }
 
-func (msg interested) toBytes() ([]byte, error) {
-	panic("Not implemented!")
+func (msg Bitfield) WriteTo(w io.Writer) error {
+	err := binary.Write(w, binary.BigEndian, messageBase{1 + uint32(len(msg.Bitfield)), bitfieldMT})
+	if err != nil {
+		return err
+	}
+	err = binary.Write(w, binary.BigEndian, msg.Bitfield)
+	return err
 }
 
-func (msg notInterested) toBytes() ([]byte, error) {
-	panic("Not implemented!")
-}
-
-func (msg have) toBytes() ([]byte, error) {
-	panic("Not implemented!")
-}
-
-func (msg request) toBytes() ([]byte, error) {
-	panic("Not implemented!")
-}
-
-func (msg cancel) toBytes() ([]byte, error) {
-	panic("Not implemented!")
-}
-
-func (msg port) toBytes() ([]byte, error) {
-	panic("Not implemented!")
-}
-
-func (msg Bitfield) toBytes() ([]byte, error) {
-	panic("Not implemented!")
-}
-
-func (msg Piece) toBytes() ([]byte, error) {
-	panic("Not implemented!")
+func (msg Piece) WriteTo(w io.Writer) error {
+	err := binary.Write(w, binary.BigEndian, messageBase{9 + uint32(len(msg.Block)), pieceMT})
+	if err != nil {
+		return err
+	}
+	err = binary.Write(w, binary.BigEndian, msg.Index)
+	if err != nil {
+		return err
+	}
+	err = binary.Write(w, binary.BigEndian, msg.Begin)
+	if err != nil {
+		return err
+	}
+	err = binary.Write(w, binary.BigEndian, msg.Block)
+	if err != nil {
+		return err
+	}
+	return err
 }
