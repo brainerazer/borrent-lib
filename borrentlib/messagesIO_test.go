@@ -226,31 +226,15 @@ func Test_readMessage_largepiece(t *testing.T) {
 }
 
 func TestWriteMessage(t *testing.T) {
-	type args struct {
-		message torrentMessage
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantBuf string
-		wantErr bool
-	}{
-		{
-			"keepAlive",
-			args{message: keepAlive{}},
-			"\x00\x00\x00\x00",
-			false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tt := range readWriteTestData {
+		t.Run(tt.testName, func(t *testing.T) {
 			buf := &bytes.Buffer{}
-			if err := WriteMessage(buf, tt.args.message); (err != nil) != tt.wantErr {
+			if err := WriteMessage(buf, tt.message); (err != nil) != tt.wantErr {
 				t.Errorf("WriteMessage() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if gotBuf := buf.String(); gotBuf != tt.wantBuf {
-				t.Errorf("WriteMessage() = %v, want %v", gotBuf, tt.wantBuf)
+			if gotBuf := buf.Bytes(); !bytes.Equal(gotBuf, tt.rawBytes) {
+				t.Errorf("WriteMessage() = %v, want %v", gotBuf, tt.rawBytes)
 			}
 		})
 	}
