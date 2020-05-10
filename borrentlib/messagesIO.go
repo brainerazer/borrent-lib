@@ -52,7 +52,7 @@ func readHeader(buf io.Reader) (header messageBase, err error) {
 }
 
 // ReadMessage reads all other messages which are not handshake
-func readMessage(buf io.Reader) (message interface{}, err error) {
+func readMessage(buf io.Reader) (message torrentMessage, err error) {
 	msg, err := readHeader(buf)
 	if err != nil {
 		return
@@ -114,4 +114,58 @@ func readMessage(buf io.Reader) (message interface{}, err error) {
 	}
 
 	return
+}
+
+// WriteMessage ...
+func WriteMessage(buf io.Writer, message torrentMessage) (err error) {
+	bytes, err := message.toBytes()
+	if err != nil {
+		return
+	}
+	_, err = buf.Write(bytes)
+	return
+}
+
+func (msg keepAlive) toBytes() ([]byte, error) {
+	return []byte("\x00\x00\x00\x00"), nil
+}
+
+func (msg choke) toBytes() ([]byte, error) {
+	panic("Not implemented!")
+}
+
+func (msg unchoke) toBytes() ([]byte, error) {
+	panic("Not implemented!")
+}
+
+func (msg interested) toBytes() ([]byte, error) {
+	panic("Not implemented!")
+}
+
+func (msg notInterested) toBytes() ([]byte, error) {
+	panic("Not implemented!")
+}
+
+func (msg have) toBytes() ([]byte, error) {
+	panic("Not implemented!")
+}
+
+func (msg request) toBytes() ([]byte, error) {
+	panic("Not implemented!")
+}
+
+func (msg cancel) toBytes() ([]byte, error) {
+	panic("Not implemented!")
+}
+
+func (msg port) toBytes() ([]byte, error) {
+	panic("Not implemented!")
+}
+
+func (msg Bitfield) toBytes() ([]byte, error) {
+	panic("Not implemented!")
+}
+
+func (msg Piece) toBytes() ([]byte, error) {
+	panic("Not implemented!")
 }

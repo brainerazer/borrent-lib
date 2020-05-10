@@ -18,6 +18,58 @@ func helperReadAll(t *testing.T, r io.Reader) []byte {
 	return bytes
 }
 
+var readWriteTestData = []struct {
+	testName string
+	message  torrentMessage
+	rawBytes []byte
+	wantErr  bool
+}{
+	{
+		"Wireshark sample no 1 - Bitfield",
+		Bitfield{Bitfield: []byte("\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
+			"\xff\xff\xff\xff\xff\xff\xff\xfe")},
+		[]byte("\x00\x00\x00\x19\x05\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
+			"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xfe"),
+		false,
+	},
+	{
+		"Wireshark sample no 2 - Have",
+		have{PieceIndex: 0x000000a0},
+		[]byte("\x00\x00\x00\x05\x04\x00\x00\x00\xa0"),
+		false,
+	},
+	{
+		"Wireshark sample no 2 - Interested",
+		interested{},
+		[]byte("\x00\x00\x00\x01\x02"),
+		false,
+	},
+	{
+		"Wireshark sample no 2 - Unchoke",
+		unchoke{},
+		[]byte("\x00\x00\x00\x01\x01"),
+		false,
+	},
+	{
+		"Wireshark sample no 2 - Request",
+		request{Index: 0x00000048, Begin: 0x00000000, Length: 0x00004000},
+		[]byte("\x00\x00\x00\x0d\x06\x00\x00\x00\x48\x00\x00\x00\x00\x00\x00\x40\x00"),
+		false,
+	},
+	{
+		"Wireshark own - choke",
+		choke{},
+		[]byte("\x00\x00\x00\x01\x00"),
+		false,
+	},
+	{
+		"Wireshark NOT CAPTURE (couldn't find  one) - keepalive",
+		keepAlive{},
+		[]byte("\x00\x00\x00\x00"),
+		false,
+	},
+}
+
 func Test_readHandshake(t *testing.T) {
 	type args struct {
 		buf io.Reader
@@ -124,83 +176,15 @@ func Test_writeHandshake(t *testing.T) {
 }
 
 func Test_readMessage(t *testing.T) {
-	type args struct {
-		buf io.Reader
-	}
-	tests := []struct {
-		name        string
-		args        args
-		wantMessage interface{}
-		wantErr     bool
-	}{
-		{
-			"Wireshark sample no 1 - Bitfield",
-			args{
-				bytes.NewReader([]byte("\x00\x00\x00\x19\x05\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
-					"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xfe")),
-			},
-			Bitfield{Bitfield: []byte("\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff" +
-				"\xff\xff\xff\xff\xff\xff\xff\xfe")},
-			false,
-		},
-		{
-			"Wireshark sample no 2 - Have",
-			args{
-				bytes.NewReader([]byte("\x00\x00\x00\x05\x04\x00\x00\x00\xa0")),
-			},
-			have{PieceIndex: 0x000000a0},
-			false,
-		},
-		{
-			"Wireshark sample no 2 - Interested",
-			args{
-				bytes.NewReader([]byte("\x00\x00\x00\x01\x02")),
-			},
-			interested{},
-			false,
-		},
-		{
-			"Wireshark sample no 2 - Unchoke",
-			args{
-				bytes.NewReader([]byte("\x00\x00\x00\x01\x01")),
-			},
-			unchoke{},
-			false,
-		},
-		{
-			"Wireshark sample no 2 - Request",
-			args{
-				bytes.NewReader([]byte("\x00\x00\x00\x0d\x06\x00\x00\x00\x48\x00\x00\x00\x00\x00\x00\x40\x00")),
-			},
-			request{Index: 0x00000048, Begin: 0x00000000, Length: 0x00004000},
-			false,
-		},
-		{
-			"Wireshark own - choke",
-			args{
-				bytes.NewReader([]byte("\x00\x00\x00\x01\x00")),
-			},
-			choke{},
-			false,
-		},
-		{
-			"Wireshark NOT CAPTURE (couldn't find  one) - keepalive",
-			args{
-				bytes.NewReader([]byte("\x00\x00\x00\x00")),
-			},
-			keepAlive{},
-			false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotMessage, err := readMessage(tt.args.buf)
+	for _, tt := range readWriteTestData {
+		t.Run(tt.testName, func(t *testing.T) {
+			gotMessage, err := readMessage(bytes.NewReader(tt.rawBytes))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("readMessage() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotMessage, tt.wantMessage) {
-				t.Errorf("readMessage() = %v, want %v", gotMessage, tt.wantMessage)
+			if !reflect.DeepEqual(gotMessage, tt.message) {
+				t.Errorf("readMessage() = %v, want %v", gotMessage, tt.message)
 			}
 		})
 	}
@@ -236,6 +220,37 @@ func Test_readMessage_largepiece(t *testing.T) {
 			}
 			if diff := cmp.Diff(tt.wantMessage, gotMessage); diff != "" {
 				t.Errorf("readMessage()  mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestWriteMessage(t *testing.T) {
+	type args struct {
+		message torrentMessage
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantBuf string
+		wantErr bool
+	}{
+		{
+			"keepAlive",
+			args{message: keepAlive{}},
+			"\x00\x00\x00\x00",
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			buf := &bytes.Buffer{}
+			if err := WriteMessage(buf, tt.args.message); (err != nil) != tt.wantErr {
+				t.Errorf("WriteMessage() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotBuf := buf.String(); gotBuf != tt.wantBuf {
+				t.Errorf("WriteMessage() = %v, want %v", gotBuf, tt.wantBuf)
 			}
 		})
 	}

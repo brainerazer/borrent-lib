@@ -73,3 +73,8 @@ type cancel struct {
 type port struct {
 	ListenPort uint16
 }
+
+// TorrentMessage ...
+type torrentMessage interface {
+	toBytes() ([]byte, error)
+}
