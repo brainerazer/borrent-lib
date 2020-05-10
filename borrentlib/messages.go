@@ -54,7 +54,7 @@ type Bitfield struct {
 	Bitfield []byte
 }
 
-type request struct {
+type Request struct {
 	Index  uint32
 	Begin  uint32
 	Length uint32

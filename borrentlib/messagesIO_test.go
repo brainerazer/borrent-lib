@@ -52,7 +52,7 @@ var readWriteTestData = []struct {
 	},
 	{
 		"Wireshark sample no 2 - Request",
-		request{Index: 0x00000048, Begin: 0x00000000, Length: 0x00004000},
+		Request{Index: 0x00000048, Begin: 0x00000000, Length: 0x00004000},
 		[]byte("\x00\x00\x00\x0d\x06\x00\x00\x00\x48\x00\x00\x00\x00\x00\x00\x40\x00"),
 		false,
 	},
@@ -178,13 +178,13 @@ func Test_writeHandshake(t *testing.T) {
 func Test_readMessage(t *testing.T) {
 	for _, tt := range readWriteTestData {
 		t.Run(tt.testName, func(t *testing.T) {
-			gotMessage, err := readMessage(bytes.NewReader(tt.rawBytes))
+			gotMessage, err := ReadMessage(bytes.NewReader(tt.rawBytes))
 			if (err != nil) != tt.wantErr {
-				t.Errorf("readMessage() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ReadMessage() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotMessage, tt.message) {
-				t.Errorf("readMessage() = %v, want %v", gotMessage, tt.message)
+				t.Errorf("ReadMessage() = %v, want %v", gotMessage, tt.message)
 			}
 		})
 	}
@@ -213,13 +213,13 @@ func Test_readMessage_largepiece(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			file := helperLoadFile(t, tt.args.filename)
-			gotMessage, err := readMessage(file)
+			gotMessage, err := ReadMessage(file)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("readMessage() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ReadMessage() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if diff := cmp.Diff(tt.wantMessage, gotMessage); diff != "" {
-				t.Errorf("readMessage()  mismatch (-want +got):\n%s", diff)
+				t.Errorf("ReadMessage()  mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

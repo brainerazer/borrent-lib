@@ -52,7 +52,7 @@ func readHeader(buf io.Reader) (header messageBase, err error) {
 }
 
 // ReadMessage reads all other messages which are not handshake
-func readMessage(buf io.Reader) (message torrentMessage, err error) {
+func ReadMessage(buf io.Reader) (message torrentMessage, err error) {
 	msg, err := readHeader(buf)
 	if err != nil {
 		return
@@ -78,7 +78,7 @@ func readMessage(buf io.Reader) (message torrentMessage, err error) {
 		err = binary.Read(buf, binary.BigEndian, &outMsg)
 		return outMsg, err
 	case requestMT:
-		var outMsg request
+		var outMsg Request
 		err = binary.Read(buf, binary.BigEndian, &outMsg)
 		return outMsg, err
 	case cancelMT:
@@ -156,7 +156,7 @@ func (msg have) WriteTo(w io.Writer) error {
 	return err
 }
 
-func (msg request) WriteTo(w io.Writer) error {
+func (msg Request) WriteTo(w io.Writer) error {
 	err := binary.Write(w, binary.BigEndian, messageBase{13, requestMT})
 	if err != nil {
 		return err

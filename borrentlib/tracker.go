@@ -26,7 +26,7 @@ type PeerInfoExt struct {
 	Port   int    `bencode:"port"`
 }
 
-// AnnounceMyself - generate a random peerId & perform an announce get request to the tracker.
+// AnnounceMyself - generate a random peerId & perform an announce get Request to the tracker.
 // Returns generated peerId
 func AnnounceMyself(torrentFile TorrentFile) (peerID string, responce TrackerResponce, err error) {
 	peerID = generatePeerID()
