@@ -37,10 +37,10 @@ type keepAlive struct {
 type choke struct {
 }
 
-type unchoke struct {
+type Unchoke struct {
 }
 
-type interested struct {
+type Interested struct {
 }
 
 type notInterested struct {

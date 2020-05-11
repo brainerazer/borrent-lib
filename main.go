@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/brainerazer/borrent-lib/borrentlib"
@@ -43,22 +44,52 @@ func main() {
 	fmt.Printf("%+v\n", hs)
 	fmt.Printf("%s, %s, %v\n", hs.Str, hs.PeerID, hs.InfoHash)
 
-	go read(conn)
-	time.Sleep(5 * time.Second)
-	err = borrentlib.WriteMessage(conn, borrentlib.Request{Index: 0x0, Begin: 0x0, Length: 0x4000})
-	if err != nil {
-		panic(err)
-	}
+	pInfo := borrentlib.NewPeerConnectionInfo()
+	mu := sync.Mutex{}
+	go read(conn, &pInfo, &mu)
+	go write(conn, &pInfo, &mu)
+
 	select {}
 	// fmt.Println(tf.Info.PiecesHashes)
 }
 
-func read(conn net.Conn) {
+func read(conn net.Conn, pInfo *borrentlib.PeerConnectionInfo, mu *sync.Mutex) {
 	for true {
 		msg, err := borrentlib.ReadMessage(conn)
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("%#v", msg)
+		piece, ok := msg.(borrentlib.Piece)
+		if ok {
+			fmt.Printf("begin: %d, idx: %d, block: %v...\n", piece.Begin, piece.Index, piece.Block[:5])
+		} else {
+			fmt.Printf("%#v\n", msg)
+		}
+		_, ok = msg.(borrentlib.Unchoke)
+		if ok {
+			mu.Lock()
+			pInfo.PeerChoking = 0
+			mu.Unlock()
+		}
+	}
+}
+
+func write(conn net.Conn, pInfo *borrentlib.PeerConnectionInfo, mu *sync.Mutex) {
+	err := borrentlib.WriteMessage(conn, borrentlib.Interested{})
+	if err != nil {
+		panic(err)
+	}
+	for true {
+		time.Sleep(1 * time.Second)
+		mu.Lock()
+		isChoking := pInfo.PeerChoking
+		mu.Unlock()
+		if isChoking == 0 {
+			err := borrentlib.WriteMessage(conn, borrentlib.Request{Index: 0x0, Begin: 0x0, Length: 0x4000})
+			if err != nil {
+				panic(err)
+			}
+			break
+		}
 	}
 }

@@ -40,13 +40,13 @@ var readWriteTestData = []struct {
 	},
 	{
 		"Wireshark sample no 2 - Interested",
-		interested{},
+		Interested{},
 		[]byte("\x00\x00\x00\x01\x02"),
 		false,
 	},
 	{
 		"Wireshark sample no 2 - Unchoke",
-		unchoke{},
+		Unchoke{},
 		[]byte("\x00\x00\x00\x01\x01"),
 		false,
 	},

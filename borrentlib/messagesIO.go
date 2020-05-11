@@ -68,9 +68,9 @@ func ReadMessage(buf io.Reader) (message torrentMessage, err error) {
 	case chokeMT:
 		return choke{}, nil
 	case unchokeMT:
-		return unchoke{}, nil
+		return Unchoke{}, nil
 	case interestedMT:
-		return interested{}, nil
+		return Interested{}, nil
 	case notInterestedMT:
 		return notInterested{}, nil
 	case haveMT:
@@ -132,12 +132,12 @@ func (msg choke) WriteTo(w io.Writer) error {
 	return err
 }
 
-func (msg unchoke) WriteTo(w io.Writer) error {
+func (msg Unchoke) WriteTo(w io.Writer) error {
 	err := binary.Write(w, binary.BigEndian, messageBase{1, unchokeMT})
 	return err
 }
 
-func (msg interested) WriteTo(w io.Writer) error {
+func (msg Interested) WriteTo(w io.Writer) error {
 	err := binary.Write(w, binary.BigEndian, messageBase{1, interestedMT})
 	return err
 }

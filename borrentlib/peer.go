@@ -7,10 +7,10 @@ import (
 
 // PeerConnectionInfo ...
 type PeerConnectionInfo struct {
-	amChoking      int
-	amInterested   int
-	peerChoking    int
-	peerInterested int
+	AmChoking      int
+	AmInterested   int
+	PeerChoking    int
+	PeerInterested int
 }
 
 // NewPeerConnectionInfo ...
