@@ -1,19 +1,33 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"log"
 	"math/rand"
-	"net"
 	"os"
-	"sync"
+	"runtime/pprof"
 	"time"
 
 	"github.com/brainerazer/borrent-lib/borrentlib"
 )
 
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+
 func main() {
+	flag.Parse()
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+
+		defer pprof.StopCPUProfile()
+	}
+
 	rand.Seed(time.Now().UnixNano())
-	path := "borrentlib/testdata/ubuntu-20.04-desktop-amd64.iso.torrent"
+	path := "ubuntu-20.04.1-desktop-amd64.iso.torrent"
 	bytes, err := os.Open(path)
 	if err != nil {
 		panic(err)
@@ -28,78 +42,75 @@ func main() {
 		panic(err)
 	}
 
+	// fmt.Println("#v", tf)
+
 	fmt.Println(peerID)
 	fmt.Println(responce)
 
 	persister, err := borrentlib.InitDenseFileDiskChunkPersister(tf.FileInfo.Name, tf.FileInfo.Length, tf.FileInfo.PieceLength)
 
-	conn, err := borrentlib.DialPeerTCP(responce.Peers[0])
-	if err != nil {
-		panic(err)
+	peerPool := borrentlib.InitPeerPool(tf.InfoHash, peerID)
+
+	for _, peer := range responce.Peers[:10] {
+		peerPool.ConnectPeer(peer)
+
 	}
-	defer conn.Close()
 
-	hs, err := borrentlib.PeerHandshake(conn, tf.InfoHash[:], peerID)
-	if err != nil {
-		panic(err)
+	jobs := make(chan job, 20)
+	done := make(chan bool)
+
+	for w := 1; w <= 10; w++ {
+		go worker(jobs, done)
 	}
-	fmt.Printf("%+v\n", hs)
-	fmt.Printf("%s, %s, %v\n", hs.Str, hs.PeerID, hs.InfoHash)
 
-	pInfo := borrentlib.NewPeerConnectionInfo()
-	mu := sync.Mutex{}
-	go read(conn, &pInfo, persister, &mu)
-	go write(conn, &pInfo, tf.FileInfo.Length/tf.FileInfo.PieceLength, &mu)
+	for i := 0; i < len(tf.FileInfo.PiecesHashes); i++ {
+		jobs <- job{
+			&peerPool,
+			persister,
+			tf,
+			uint64(i),
+		}
+	}
 
-	select {}
-	// fmt.Println(tf.Info.PiecesHashes)
+	close(jobs)
+
+	for w := 1; w <= 10; w++ {
+		<-done
+		fmt.Printf("Done %d\n", w)
+	}
+
+	peerPool.Close()
 }
 
-func read(conn net.Conn, pInfo *borrentlib.PeerConnectionInfo, persister borrentlib.ChunkPersister, mu *sync.Mutex) {
-	for true {
-		msg, err := borrentlib.ReadMessage(conn)
+type job struct {
+	peerPool    *borrentlib.PeerPool
+	persister   borrentlib.ChunkPersister
+	torrentFile borrentlib.TorrentFile
+	chunkID     uint64
+}
+
+func worker(jobs <-chan job, done chan<- bool) {
+	var err error
+	for j := range jobs {
+		fmt.Println("job started")
+
+		var peer *borrentlib.PeerPoolEntry
+		for true {
+			peer, err = j.peerPool.GetPeer()
+			if err != nil {
+				time.Sleep(10 * time.Millisecond)
+				continue
+			}
+			break
+		}
+		fmt.Println("got peer")
+
+		err := borrentlib.DownloadChunk(peer, j.persister, j.torrentFile.FileInfo.PieceLength, uint64(j.chunkID), j.torrentFile.FileInfo.PiecesHashes[j.chunkID])
 		if err != nil {
 			panic(err)
 		}
-		mu.Lock()
-		pInfo.AmInterested = 0
-		mu.Unlock()
-		piece, ok := msg.(borrentlib.Piece)
-		if ok {
-			fmt.Printf("begin: %d, idx: %d, block: %v...\n", piece.Begin, piece.Index, piece.Block[:5])
-			persister.PersistChunk(int64(piece.Index), piece.Block)
-		} else {
-			fmt.Printf("%#v\n", msg)
-		}
-		_, ok = msg.(borrentlib.Unchoke)
-		if ok {
-			mu.Lock()
-			pInfo.PeerChoking = 0
-			mu.Unlock()
-		}
-		mu.Lock()
-		pInfo.AmInterested = 1
-		mu.Unlock()
-	}
-}
 
-func write(conn net.Conn, pInfo *borrentlib.PeerConnectionInfo, chunks uint64, mu *sync.Mutex) {
-	err := borrentlib.WriteMessage(conn, borrentlib.Interested{})
-	if err != nil {
-		panic(err)
+		peer.Return()
 	}
-	for i := uint64(0); i < chunks; {
-		time.Sleep(1 * time.Second)
-		mu.Lock()
-		isChoking := pInfo.PeerChoking
-		amInterested := pInfo.AmInterested
-		mu.Unlock()
-		if isChoking == 0 && amInterested == 1 {
-			err := borrentlib.WriteMessage(conn, borrentlib.Request{Index: uint32(i), Begin: 0x0, Length: 0x4000})
-			i++
-			if err != nil {
-				panic(err)
-			}
-		}
-	}
+	done <- true
 }

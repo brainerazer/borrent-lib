@@ -1,12 +1,13 @@
 package borrentlib
 
 import (
+	"crypto/sha1"
 	"os"
 )
 
 type ChunkPersister interface {
-	PersistChunk(idx int64, data []byte) error
-	ReadChunkHash(idx int64) ([]byte, error)
+	PersistChunk(idx int64, offset int64, data []byte) error
+	ReadChunkHash(idx uint64) ([]byte, error)
 }
 
 type DenseFileDiskChunkPersister struct {
@@ -33,13 +34,15 @@ func InitDenseFileDiskChunkPersister(fileName string, size uint64, chunkSize uin
 	return
 }
 
-func (p *DenseFileDiskChunkPersister) PersistChunk(idx int64, data []byte) error {
-	_, err := p.file.WriteAt(data, idx*p.chunkSize)
+func (p *DenseFileDiskChunkPersister) PersistChunk(idx int64, offset int64, data []byte) error {
+	_, err := p.file.WriteAt(data, idx*p.chunkSize+offset)
 	return err
 }
 
-func (p *DenseFileDiskChunkPersister) ReadChunkHash(idx int64) ([]byte, error) {
-	var buf []byte
-	_, err := p.file.ReadAt(buf, idx*p.chunkSize)
-	return buf, err
+func (p *DenseFileDiskChunkPersister) ReadChunkHash(idx uint64) ([]byte, error) {
+	var buf = make([]byte, p.chunkSize)
+	_, err := p.file.ReadAt(buf, int64(idx)*p.chunkSize)
+
+	hash := sha1.Sum(buf)
+	return hash[:], err
 }
