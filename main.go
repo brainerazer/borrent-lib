@@ -13,6 +13,7 @@ import (
 )
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+var torrentfile = flag.String("torrentfile", "", "torrent file to download (required)")
 
 func main() {
 	flag.Parse()
@@ -26,9 +27,13 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
+	if *torrentfile == "" {
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
+
 	rand.Seed(time.Now().UnixNano())
-	path := "ubuntu-20.04.1-desktop-amd64.iso.torrent"
-	bytes, err := os.Open(path)
+	bytes, err := os.Open(*torrentfile)
 	if err != nil {
 		panic(err)
 	}
