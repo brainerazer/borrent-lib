@@ -5,6 +5,9 @@
 *.so
 *.dylib
 
+.DS_Store
+*.prof
+
 # Test binary, built with `go test -c`
 *.test
 borrent-lib
