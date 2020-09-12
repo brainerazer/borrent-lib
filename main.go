@@ -52,7 +52,7 @@ func main() {
 	fmt.Println(peerID)
 	fmt.Println(responce)
 
-	persister, err := borrentlib.InitDenseFileDiskChunkPersister(tf.FileInfo.Name, tf.FileInfo.Length, tf.FileInfo.PieceLength)
+	persister, err := borrentlib.InitSparseFileDiskChunkPersister(tf.FileInfo.Name, tf.FileInfo.Length, tf.FileInfo.PieceLength)
 
 	peerPool := borrentlib.InitPeerPool(tf.InfoHash, peerID)
 
