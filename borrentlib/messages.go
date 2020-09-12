@@ -34,7 +34,7 @@ type messageBase struct {
 type keepAlive struct {
 }
 
-type choke struct {
+type Choke struct {
 }
 
 type Unchoke struct {

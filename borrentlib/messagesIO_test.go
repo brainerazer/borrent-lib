@@ -57,8 +57,8 @@ var readWriteTestData = []struct {
 		false,
 	},
 	{
-		"Wireshark own - choke",
-		choke{},
+		"Wireshark own - Choke",
+		Choke{},
 		[]byte("\x00\x00\x00\x01\x00"),
 		false,
 	},

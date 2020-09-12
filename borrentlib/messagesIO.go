@@ -66,7 +66,7 @@ func ReadMessage(buf io.Reader) (message torrentMessage, err error) {
 
 	// All the fixed-size first, as they are easier
 	case chokeMT:
-		return choke{}, nil
+		return Choke{}, nil
 	case unchokeMT:
 		return Unchoke{}, nil
 	case interestedMT:
@@ -127,7 +127,7 @@ func (msg keepAlive) WriteTo(w io.Writer) error {
 	return err
 }
 
-func (msg choke) WriteTo(w io.Writer) error {
+func (msg Choke) WriteTo(w io.Writer) error {
 	err := binary.Write(w, binary.BigEndian, messageBase{1, chokeMT})
 	return err
 }
