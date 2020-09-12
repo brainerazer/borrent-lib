@@ -28,6 +28,9 @@ func DownloadChunk(peer *PeerPoolEntry, persister ChunkPersister, chunkSize uint
 		if err != nil {
 			return err
 		}
+	}
+
+	for j := uint64(0); j < chunkSize/transferBlockSize; j++ {
 
 		for true {
 			msg, err := ReadMessage(conn)
