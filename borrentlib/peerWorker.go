@@ -32,7 +32,7 @@ type PeerState struct {
 }
 
 //
-func PeerWorker(infoHash []byte, ownPeerID string, peerInfo PeerInfoExt, jobs <-chan PeerWorkerJob, results chan<- PeerWorkerResult) {
+func PeerWorker(infoHash []byte, ownPeerID string, peerInfo PeerInfoExt, jobs chan PeerWorkerJob, results chan<- PeerWorkerResult) {
 	conn, err := DialPeerTCP(peerInfo)
 	if err != nil {
 		return
@@ -86,7 +86,7 @@ func peerConnReader(peerState *PeerState, results chan<- PeerWorkerResult) {
 			peerState.mu.Unlock()
 
 		case Piece:
-			fmt.Printf("begin: %d, idx: %d, block: %v..., peer: %s\n", v.Begin, v.Index, v.Block[:5], peerState.peerID)
+			// fmt.Printf("begin: %d, idx: %d, block: %v..., peer: %s\n", v.Begin, v.Index, v.Block[:5], peerState.peerID)
 			results <- PeerWorkerResult{
 				Job: PeerWorkerJob{
 					ChunkIndex:  v.Index,
@@ -103,7 +103,7 @@ func peerConnReader(peerState *PeerState, results chan<- PeerWorkerResult) {
 	}
 }
 
-func peerConnWriter(peerState *PeerState, jobs <-chan PeerWorkerJob) {
+func peerConnWriter(peerState *PeerState, jobs chan PeerWorkerJob) {
 	for true {
 		peerState.mu.Lock()
 		isChoked := peerState.PeerChoking
@@ -130,6 +130,7 @@ func peerConnWriter(peerState *PeerState, jobs <-chan PeerWorkerJob) {
 			})
 
 			if err != nil {
+				jobs <- job
 				return
 			}
 			peerState.mu.Lock()
