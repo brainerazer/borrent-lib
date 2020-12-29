@@ -22,12 +22,18 @@ type PeerWorkerResult struct {
 }
 
 //
+type pendingJob struct {
+	job        PeerWorkerJob
+	expiration time.Time
+}
+
+//
 type PeerState struct {
 	PeerConnectionInfo
 	peerID      []byte
 	conn        net.Conn
 	batchSize   int
-	pendingJobs int
+	pendingJobs []pendingJob
 	mu          sync.Mutex
 }
 
@@ -58,6 +64,25 @@ func PeerWorker(infoHash []byte, ownPeerID string, peerInfo PeerInfoExt, jobs ch
 
 	go peerConnReader(&peerState, results)
 	go peerConnWriter(&peerState, jobs)
+	go retryPendingJobs(&peerState, jobs)
+}
+
+func retryPendingJobs(peerState *PeerState, jobs chan PeerWorkerJob) {
+	for true {
+		peerState.mu.Lock()
+		cleanedUpPending := []pendingJob{}
+		for _, job := range peerState.pendingJobs {
+			if job.expiration.Before(time.Now()) {
+				jobs <- job.job
+			} else {
+				cleanedUpPending = append(cleanedUpPending, job)
+			}
+		}
+		peerState.pendingJobs = cleanedUpPending
+		peerState.mu.Unlock()
+
+		time.Sleep(200 * time.Millisecond)
+	}
 }
 
 func peerConnReader(peerState *PeerState, results chan<- PeerWorkerResult) {
@@ -97,7 +122,13 @@ func peerConnReader(peerState *PeerState, results chan<- PeerWorkerResult) {
 				Chunk:  v.Block,
 			}
 			peerState.mu.Lock()
-			peerState.pendingJobs--
+			cleanedUpPending := []pendingJob{}
+			for _, job := range peerState.pendingJobs {
+				if job.job.ChunkIndex != v.Index || job.job.ChunkOffset != v.Begin {
+					cleanedUpPending = append(cleanedUpPending, job)
+				}
+			}
+			peerState.pendingJobs = cleanedUpPending
 			peerState.mu.Unlock()
 		}
 	}
@@ -107,7 +138,7 @@ func peerConnWriter(peerState *PeerState, jobs chan PeerWorkerJob) {
 	for true {
 		peerState.mu.Lock()
 		isChoked := peerState.PeerChoking
-		pendingJobs := peerState.pendingJobs
+		pendingJobsSize := len(peerState.pendingJobs)
 		batchSize := peerState.batchSize
 		peerState.mu.Unlock()
 
@@ -116,12 +147,12 @@ func peerConnWriter(peerState *PeerState, jobs chan PeerWorkerJob) {
 			continue
 		}
 
-		if batchSize == pendingJobs {
+		if batchSize == pendingJobsSize {
 			time.Sleep(10 * time.Millisecond)
 			continue
 		}
 
-		for i := 0; i < batchSize-pendingJobs; i++ {
+		for i := 0; i < batchSize-pendingJobsSize; i++ {
 			job := <-jobs
 			err := WriteMessage(peerState.conn, Request{
 				Index:  job.ChunkIndex,
@@ -134,7 +165,10 @@ func peerConnWriter(peerState *PeerState, jobs chan PeerWorkerJob) {
 				return
 			}
 			peerState.mu.Lock()
-			peerState.pendingJobs++
+			peerState.pendingJobs = append(peerState.pendingJobs, pendingJob{
+				job:        job,
+				expiration: time.Now().Add(30 * time.Second),
+			})
 			peerState.mu.Unlock()
 		}
 
